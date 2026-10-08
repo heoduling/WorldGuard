@@ -20,6 +20,7 @@
 package com.sk89q.worldguard.internal.platform;
 
 import com.sk89q.worldedit.util.formatting.text.TextComponent;
+import com.sk89q.worldedit.extension.platform.Actor;
 import com.sk89q.worldedit.util.report.ReportList;
 import com.sk89q.worldedit.world.World;
 import com.sk89q.worldedit.world.gamemode.GameMode;
@@ -39,6 +40,11 @@ import java.nio.file.Path;
  * A platform for implementing.
  */
 public interface WorldGuardPlatform {
+
+    /** Start platform-owned halt cleanup, returning false to use the legacy implementation. */
+    default boolean removeIntensiveEntities(Actor sender) {
+        return false;
+    }
 
     /**
      * Gets the name of the platform.

@@ -31,6 +31,11 @@ import java.util.List;
 
 public interface LocalPlayer extends Player, RegionAssociable {
 
+    /** Execute an operation in this player's owning context, or report retirement. */
+    default void runOnOwnedThread(Runnable action, Runnable retired) {
+        action.run();
+    }
+
     /**
      * Returns true if this player is inside a group.
      * 

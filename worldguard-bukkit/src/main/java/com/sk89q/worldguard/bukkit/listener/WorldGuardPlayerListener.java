@@ -24,6 +24,7 @@ import com.sk89q.worldedit.world.gamemode.GameMode;
 import com.sk89q.worldguard.LocalPlayer;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
+import com.sk89q.worldguard.bukkit.BukkitWorldGuardPlatform;
 import com.sk89q.worldguard.bukkit.event.player.ProcessPlayerEvent;
 import com.sk89q.worldguard.bukkit.util.Events;
 import com.sk89q.worldguard.bukkit.util.Materials;
@@ -111,18 +112,22 @@ public class WorldGuardPlayerListener extends AbstractListener {
             player.sendMessage(ChatColor.YELLOW
                     + "Intensive server activity has been HALTED.");
 
-            int removed = 0;
+            if (getPlugin().isFolia()) {
+                BukkitWorldGuardPlatform.removeIntensiveEntities(world.getEntities(), getPlugin().wrapPlayer(player));
+            } else {
+                int removed = 0;
 
-            for (Entity entity : world.getEntities()) {
-                if (Entities.isIntensiveEntity(BukkitAdapter.adapt(entity))) {
-                    entity.remove();
-                    removed++;
+                for (Entity entity : world.getEntities()) {
+                    if (Entities.isIntensiveEntity(BukkitAdapter.adapt(entity))) {
+                        entity.remove();
+                        removed++;
+                    }
                 }
-            }
 
-            if (removed > 10) {
-                log.info("Halt-Act: " + removed + " entities (>10) auto-removed from "
-                        + player.getWorld());
+                if (removed > 10) {
+                    log.info("Halt-Act: " + removed + " entities (>10) auto-removed from "
+                            + player.getWorld());
+                }
             }
         }
 

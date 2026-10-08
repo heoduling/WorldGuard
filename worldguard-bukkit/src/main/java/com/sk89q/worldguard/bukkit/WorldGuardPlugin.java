@@ -171,6 +171,13 @@ public class WorldGuardPlugin extends JavaPlugin {
         }
 
         if (this.isFolia()) {
+            if (platform.getGlobalStateManager().useRegionsPreCreatureSpawnEvent) {
+                getLogger().info("Folia: using final creature spawn checks to preserve per-player mob caps; pre-spawn checks are skipped.");
+            }
+            if (getServer().getVersion().contains("28fe077")
+                    && getServer().getClass().getClassLoader().getResource("worldguard-teleport-bridge.properties") == null) {
+                getLogger().warning("This Shiroha build requires the companion teleport bridge core for cancellable async teleport protection.");
+            }
             getServer().getGlobalRegionScheduler().runAtFixedRate(this, new Consumer() {
                 @Override
                 public void accept(Object ignored) {

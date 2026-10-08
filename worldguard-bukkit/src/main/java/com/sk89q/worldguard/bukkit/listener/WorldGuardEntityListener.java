@@ -944,7 +944,9 @@ public class WorldGuardEntityListener extends AbstractListener {
 
             ConfigurationManager cfg = getConfig();
 
-            if (!cfg.useRegionsPreCreatureSpawnEvent) {
+            // Folia's per-player mob caps charge cancelled pre-spawns to nearby players.
+            // Keep the final CreatureSpawnEvent checks without suppressing allowed neighbours.
+            if (!cfg.useRegionsPreCreatureSpawnEvent || getPlugin().isFolia()) {
                 return;
             }
 

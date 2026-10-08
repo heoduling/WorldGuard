@@ -1,0 +1,9 @@
+name: WorldGuardRegressionProbe
+version: 2.0
+main: audit.wg.RegressionProbe
+api-version: '26.2'
+folia-supported: true
+depend: [WorldGuard, WorldEdit]
+commands:
+  regress:
+    description: Isolated compatibility regression

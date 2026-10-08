@@ -60,7 +60,8 @@ public final class WorldGuardProbe extends JavaPlugin implements Listener {
                 if (candidate.getListener() instanceof BlacklistListener) listeners.add(candidate);
             }
             if (listeners.isEmpty()) throw new IllegalStateException("Registered blacklist listener not found");
-            fixed = WorldGuardPlugin.inst().getDescription().getVersion().contains("holderfix");
+            String version = WorldGuardPlugin.inst().getDescription().getVersion();
+            fixed = version.contains("holderfix") || version.contains("foliafix");
             rules = new Blacklist(false);
             rules.load(new java.io.File(getDataFolder(), "blacklist.txt"));
             getLogger().info("PROBE_READY fixed=" + fixed + " version=" + WorldGuardPlugin.inst().getDescription().getVersion());

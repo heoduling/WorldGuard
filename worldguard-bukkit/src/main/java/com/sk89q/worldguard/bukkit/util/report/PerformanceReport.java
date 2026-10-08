@@ -21,6 +21,7 @@ package com.sk89q.worldguard.bukkit.util.report;
 
 import com.google.common.collect.Maps;
 import com.sk89q.worldedit.util.report.DataReport;
+import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.World;
@@ -52,19 +53,24 @@ public class PerformanceReport extends DataReport {
 
             // Collect tile entities
             int teCount = 0;
-            for (Chunk chunk : world.getLoadedChunks()) {
-                teCount += chunk.getTileEntities().length;
-                for (BlockState state : chunk.getTileEntities()) {
-                    Class<? extends BlockState> cls = state.getClass();
+            if (WorldGuardPlugin.inst().isFolia()) {
+                report.append("Tile Entity Statistics", "Unavailable on Folia: block data requires each chunk's owning region");
+            } else {
+                for (Chunk chunk : world.getLoadedChunks()) {
+                    BlockState[] states = chunk.getTileEntities();
+                    teCount += states.length;
+                    for (BlockState state : states) {
+                        Class<? extends BlockState> cls = state.getClass();
 
-                    if (tileEntityCounts.containsKey(cls)) {
-                        tileEntityCounts.put(cls, tileEntityCounts.get(cls) + 1);
-                    } else {
-                        tileEntityCounts.put(cls, 1);
+                        if (tileEntityCounts.containsKey(cls)) {
+                            tileEntityCounts.put(cls, tileEntityCounts.get(cls) + 1);
+                        } else {
+                            tileEntityCounts.put(cls, 1);
+                        }
                     }
                 }
+                report.append("Tile Entity Count", teCount);
             }
-            report.append("Tile Entity Count", teCount);
 
             // Collect entities
             for (Entity entity : world.getEntities()) {

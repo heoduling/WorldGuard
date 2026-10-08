@@ -21,6 +21,7 @@ package com.sk89q.worldguard.bukkit;
 
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.bukkit.BukkitWorld;
+import com.sk89q.worldedit.extension.platform.Actor;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.util.formatting.text.TextComponent;
 import com.sk89q.worldedit.util.report.ReportList;
@@ -56,6 +57,7 @@ import com.sk89q.worldguard.util.profile.resolver.ProfileService;
 import io.papermc.lib.PaperLib;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Entity;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.permissions.Permissible;
 
@@ -64,6 +66,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 public class BukkitWorldGuardPlatform implements WorldGuardPlatform {
@@ -75,6 +79,62 @@ public class BukkitWorldGuardPlatform implements WorldGuardPlatform {
     private StringMatcher stringMatcher;
 
     public BukkitWorldGuardPlatform() {
+    }
+
+    @Override
+    public boolean removeIntensiveEntities(Actor sender) {
+        WorldGuardPlugin plugin = WorldGuardPlugin.inst();
+        if (!plugin.isFolia()) {
+            return false;
+        }
+        // getEntities returns a snapshot of handles; inspect and remove only on each entity's owner.
+        List<Entity> entities = Bukkit.getWorlds().stream().flatMap(world -> world.getEntities().stream()).toList();
+        removeIntensiveEntities(entities, sender);
+        return true;
+    }
+
+    /** Clean up a snapshot of entity handles without reading another region's live state. */
+    public static void removeIntensiveEntities(List<Entity> entities, Actor sender) {
+        WorldGuardPlugin plugin = WorldGuardPlugin.inst();
+        AtomicInteger remaining = new AtomicInteger(entities.size());
+        AtomicInteger removed = new AtomicInteger();
+        AtomicInteger skipped = new AtomicInteger();
+        AtomicInteger failed = new AtomicInteger();
+        Runnable finish = () -> {
+            if (remaining.decrementAndGet() == 0) {
+                sender.print("Halt cleanup finished: " + removed.get() + " removed, "
+                        + skipped.get() + " retired/cancelled, " + failed.get() + " failed.");
+            }
+        };
+        if (entities.isEmpty()) {
+            sender.print("Halt cleanup finished: 0 removed.");
+        }
+        for (Entity entity : entities) {
+            Runnable retired = () -> {
+                skipped.incrementAndGet();
+                finish.run();
+            };
+            Runnable remove = () -> {
+                try {
+                    if (!plugin.getConfigManager().activityHaltToggle) {
+                        skipped.incrementAndGet();
+                    } else if (com.sk89q.worldguard.util.Entities.isIntensiveEntity(BukkitAdapter.adapt(entity))) {
+                        entity.remove();
+                        removed.incrementAndGet();
+                    }
+                } catch (RuntimeException e) {
+                    failed.incrementAndGet();
+                    plugin.getLogger().log(Level.WARNING, "Halt cleanup failed for an entity", e);
+                } finally {
+                    finish.run();
+                }
+            };
+            if (Bukkit.isOwnedByCurrentRegion(entity)) {
+                remove.run();
+            } else if (!entity.getScheduler().execute(plugin, remove, retired, 1L)) {
+                retired.run();
+            }
+        }
     }
 
     @Override

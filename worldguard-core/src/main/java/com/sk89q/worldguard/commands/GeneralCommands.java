@@ -43,7 +43,6 @@ public class GeneralCommands {
             desc = "Enable godmode on a player", flags = "s", max = 1)
     public void god(CommandContext args, Actor sender) throws CommandException, AuthorizationException {
         Iterable<? extends LocalPlayer> targets = null;
-        boolean included = false;
         
         // Detect arguments based on the number of arguments provided
         if (args.argsLength() == 0) {
@@ -58,29 +57,27 @@ public class GeneralCommands {
             sender.checkPermission("worldguard.god.other");
         }
 
+        String senderName = sender.getDisplayName();
         for (LocalPlayer player : targets) {
-            Session session = WorldGuard.getInstance().getPlatform().getSessionManager().get(player);
+            player.runOnOwnedThread(() -> {
+                Session session = WorldGuard.getInstance().getPlatform().getSessionManager().get(player);
 
-            if (GodMode.set(player, session, true)) {
-                player.setFireTicks(0);
+                if (GodMode.set(player, session, true)) {
+                    player.setFireTicks(0);
 
-                // Tell the user
-                if (player.equals(sender)) {
-                    player.print("God mode enabled! Use /ungod to disable.");
+                    // Tell the user
+                    if (player.equals(sender)) {
+                        player.print("God mode enabled! Use /ungod to disable.");
 
-                    // Keep track of this
-                    included = true;
-                } else if (!args.hasFlag('s')) {
-                    player.print("God enabled by " + sender.getDisplayName() + ".");
+                    } else if (!args.hasFlag('s')) {
+                        player.print("God enabled by " + senderName + ".");
 
+                    }
                 }
-            }
-        }
-        
-        // The player didn't receive any items, then we need to send the
-        // user a message so s/he know that something is indeed working
-        if (!included) {
-            sender.print("Players now have god mode.");
+                if (!player.equals(sender)) {
+                    sender.print("God mode enabled for " + player.getName() + ".");
+                }
+            }, () -> sender.printError("Player left before the operation could run: " + player.getName()));
         }
     }
     
@@ -88,7 +85,6 @@ public class GeneralCommands {
             desc = "Disable godmode on a player", flags = "s", max = 1)
     public void ungod(CommandContext args, Actor sender) throws CommandException, AuthorizationException {
         Iterable<? extends LocalPlayer> targets;
-        boolean included = false;
         
         // Detect arguments based on the number of arguments provided
         if (args.argsLength() == 0) {
@@ -103,27 +99,25 @@ public class GeneralCommands {
             sender.checkPermission("worldguard.god.other");
         }
 
+        String senderName = sender.getDisplayName();
         for (LocalPlayer player : targets) {
-            Session session = WorldGuard.getInstance().getPlatform().getSessionManager().get(player);
+            player.runOnOwnedThread(() -> {
+                Session session = WorldGuard.getInstance().getPlatform().getSessionManager().get(player);
 
-            if (GodMode.set(player, session, false)) {
-                // Tell the user
-                if (player.equals(sender)) {
-                    player.print("God mode disabled!");
+                if (GodMode.set(player, session, false)) {
+                    // Tell the user
+                    if (player.equals(sender)) {
+                        player.print("God mode disabled!");
 
-                    // Keep track of this
-                    included = true;
-                } else if (!args.hasFlag('s')) {
-                    player.print("God disabled by " + sender.getDisplayName() + ".");
+                    } else if (!args.hasFlag('s')) {
+                        player.print("God disabled by " + senderName + ".");
 
+                    }
                 }
-            }
-        }
-        
-        // The player didn't receive any items, then we need to send the
-        // user a message so s/he know that something is indeed working
-        if (!included) {
-            sender.print("Players no longer have god mode.");
+                if (!player.equals(sender)) {
+                    sender.print("God mode disabled for " + player.getName() + ".");
+                }
+            }, () -> sender.printError("Player left before the operation could run: " + player.getName()));
         }
     }
     
@@ -131,7 +125,6 @@ public class GeneralCommands {
     public void heal(CommandContext args, Actor sender) throws CommandException, AuthorizationException {
 
         Iterable<? extends LocalPlayer> targets = null;
-        boolean included = false;
         
         // Detect arguments based on the number of arguments provided
         if (args.argsLength() == 0) {
@@ -146,28 +139,26 @@ public class GeneralCommands {
             sender.checkPermission("worldguard.heal.other");
         }
 
+        String senderName = sender.getDisplayName();
         for (LocalPlayer player : targets) {
-            player.setHealth(player.getMaxHealth());
-            player.setFoodLevel(20);
-            player.setSaturation(20);
-            player.setExhaustion(0);
+            player.runOnOwnedThread(() -> {
+                player.setHealth(player.getMaxHealth());
+                player.setFoodLevel(20);
+                player.setSaturation(20);
+                player.setExhaustion(0);
             
-            // Tell the user
-            if (player.equals(sender)) {
-                player.print("Healed!");
+                // Tell the user
+                if (player.equals(sender)) {
+                    player.print("Healed!");
                 
-                // Keep track of this
-                included = true;
-            } else if (!args.hasFlag('s')) {
-                player.print("Healed by " + sender.getDisplayName() + ".");
+                } else if (!args.hasFlag('s')) {
+                    player.print("Healed by " + senderName + ".");
                 
-            }
-        }
-        
-        // The player didn't receive any items, then we need to send the
-        // user a message so s/he know that something is indeed working
-        if (!included) {
-            sender.print("Players healed.");
+                }
+                if (!player.equals(sender)) {
+                    sender.print("Healed " + player.getName() + ".");
+                }
+            }, () -> sender.printError("Player left before the operation could run: " + player.getName()));
         }
     }
     
@@ -175,7 +166,6 @@ public class GeneralCommands {
     public void slay(CommandContext args, Actor sender) throws CommandException, AuthorizationException {
         
         Iterable<? extends LocalPlayer> targets = Lists.newArrayList();
-        boolean included = false;
         
         // Detect arguments based on the number of arguments provided
         if (args.argsLength() == 0) {
@@ -190,25 +180,23 @@ public class GeneralCommands {
             sender.checkPermission("worldguard.slay.other");
         }
 
+        String senderName = sender.getDisplayName();
         for (LocalPlayer player : targets) {
-            player.setHealth(0);
+            player.runOnOwnedThread(() -> {
+                player.setHealth(0);
             
-            // Tell the user
-            if (player.equals(sender)) {
-                player.print("Slain!");
+                // Tell the user
+                if (player.equals(sender)) {
+                    player.print("Slain!");
                 
-                // Keep track of this
-                included = true;
-            } else if (!args.hasFlag('s')) {
-                player.print("Slain by " + sender.getDisplayName() + ".");
+                } else if (!args.hasFlag('s')) {
+                    player.print("Slain by " + senderName + ".");
                 
-            }
-        }
-        
-        // The player didn't receive any items, then we need to send the
-        // user a message so s/he know that something is indeed working
-        if (!included) {
-            sender.print("Players slain.");
+                }
+                if (!player.equals(sender)) {
+                    sender.print("Slain " + player.getName() + ".");
+                }
+            }, () -> sender.printError("Player left before the operation could run: " + player.getName()));
         }
     }
     

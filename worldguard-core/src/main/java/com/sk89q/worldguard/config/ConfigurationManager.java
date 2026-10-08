@@ -66,7 +66,7 @@ public abstract class ConfigurationManager {
 
     public boolean useRegionsCreatureSpawnEvent;
     public boolean useRegionsPreCreatureSpawnEvent;
-    public boolean activityHaltToggle = false;
+    public volatile boolean activityHaltToggle = false;
     public boolean useGodPermission;
     public boolean useGodGroup;
     public boolean useAmphibiousGroup;

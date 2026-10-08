@@ -63,6 +63,18 @@ public class BukkitPlayer extends com.sk89q.worldedit.bukkit.BukkitPlayer implem
     }
 
     @Override
+    public void runOnOwnedThread(Runnable action, Runnable retired) {
+        Player player = getPlayer();
+        if (!plugin.isEnabled() || !player.isOnline()) {
+            retired.run();
+        } else if (!plugin.isFolia() || Bukkit.isOwnedByCurrentRegion(player)) {
+            action.run();
+        } else if (!player.getScheduler().execute(plugin, action, retired, 1L)) {
+            retired.run();
+        }
+    }
+
+    @Override
     public void kick(String msg) {
         if (!silenced) {
             getPlayer().kickPlayer(msg);

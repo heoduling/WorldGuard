@@ -33,7 +33,7 @@ this protocol. Re-export and review the packet map before using a different core
    on Windows when automating these steps.
 5. Run `RUNTIME/run-runtime-tests.ps1 -Phase production` for 7.0.18,
    `-Phase upstream` for the unpatched upstream head, or `-Phase fixed` for the
-   patched build. The probe identifies the patched build by `holderfix` in its
+   patched build. The probe identifies the patched build by `holderfix` or `foliafix` in its
    version. Each normal run performs 114 checks plus nine actual TCP inventory
    clicks, restores the in-memory production blacklist and stops the server.
 

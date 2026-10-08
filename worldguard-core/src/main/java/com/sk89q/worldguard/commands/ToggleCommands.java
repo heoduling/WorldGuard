@@ -151,6 +151,9 @@ public class ToggleCommands {
                     sender.print("(Silent) ALL intensive server activity halted by " + sender.getDisplayName() + ".");
                 }
 
+                if (worldGuard.getPlatform().removeIntensiveEntities(sender)) {
+                    return;
+                }
                 for (World world : WorldEdit.getInstance().getPlatformManager().queryCapability(Capability.GAME_HOOKS).getWorlds()) {
                     int removed = 0;
 

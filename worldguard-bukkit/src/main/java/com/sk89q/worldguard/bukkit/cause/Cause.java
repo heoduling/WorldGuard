@@ -27,6 +27,7 @@ import com.sk89q.worldguard.bukkit.internal.WGMetadata;
 import com.sk89q.worldguard.bukkit.util.Entities;
 import io.papermc.lib.PaperLib;
 import org.bukkit.Bukkit;
+import org.bukkit.NamespacedKey;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.block.Block;
 import org.bukkit.entity.AnimalTamer;
@@ -45,6 +46,7 @@ import org.bukkit.entity.TNTPrimed;
 import org.bukkit.entity.Tameable;
 import org.bukkit.entity.Vehicle;
 import org.bukkit.metadata.Metadatable;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.projectiles.BlockProjectileSource;
 import org.bukkit.projectiles.ProjectileSource;
 
@@ -69,6 +71,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public final class Cause {
 
     private static final String CAUSE_KEY = "worldguard.cause";
+    private static final NamespacedKey PARENT_PLAYER_KEY = new NamespacedKey("worldguard", "parent_player");
     private static final Cause UNKNOWN = new Cause(Collections.emptyList(), false);
 
     private final List<Object> causes;
@@ -257,7 +260,13 @@ public final class Cause {
             throw new IllegalArgumentException("Can't track causes on Blocks because Cause doesn't check block metadata");
         }
 
-        WGMetadata.put(target, CAUSE_KEY, parent);
+        if (target instanceof SulfurCube cube && parent instanceof Player player) {
+            // Store only identity on the entity itself, never a Player in the server metadata map.
+            cube.getPersistentDataContainer().set(PARENT_PLAYER_KEY, PersistentDataType.STRING, player.getUniqueId().toString());
+            WGMetadata.remove(target, CAUSE_KEY);
+        } else {
+            WGMetadata.put(target, CAUSE_KEY, parent);
+        }
     }
 
     /**
@@ -266,6 +275,9 @@ public final class Cause {
      * @param target the target
      */
     public static void untrackParentCause(Metadatable target) {
+        if (target instanceof SulfurCube cube) {
+            cube.getPersistentDataContainer().remove(PARENT_PLAYER_KEY);
+        }
         WGMetadata.remove(target, CAUSE_KEY);
     }
 
@@ -347,6 +359,16 @@ public final class Cause {
                 }
 
                 // Add manually tracked parent causes
+                if (o instanceof SulfurCube cube) {
+                    String owner = cube.getPersistentDataContainer().get(PARENT_PLAYER_KEY, PersistentDataType.STRING);
+                    if (owner != null) {
+                        try {
+                            addAll(Bukkit.getPlayer(UUID.fromString(owner)));
+                        } catch (IllegalArgumentException ignored) {
+                            // Invalid external NBT must not prevent the entity's own protection checks.
+                        }
+                    }
+                }
                 Object source = o;
                 int index = causes.size();
                 while (source instanceof Metadatable && !(source instanceof Block)) {
