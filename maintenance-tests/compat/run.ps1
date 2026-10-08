@@ -1,4 +1,4 @@
-param([Parameter(Mandatory)][string]$RuntimeRoot,[string[]]$Commands=@('tp deny','tp allow','tp bypass','tp exit','tp exit-allow','tp pearl','tp chorus','tp cancel','tp redirect','tp vehicle-deny','tp vehicle-allow','tp vehicle-dismount','queue','queue-native entry','queue-native pearl','metadata','metadata','commands heal','commands god','commands ungod','commands slay','commands report','commands reload','spawn','scan'),[string]$Player='WgBot')
+param([Parameter(Mandatory)][string]$RuntimeRoot,[string[]]$Commands=@('metadata','metadata','commands heal','commands god','commands ungod','commands slay','commands report','commands reload','spawn','scan'),[string]$Player='WgBot')
 $ErrorActionPreference='Stop'
 $log=Join-Path $RuntimeRoot 'server/logs/latest.log'
 foreach($command in $Commands) {
