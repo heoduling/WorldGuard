@@ -80,7 +80,7 @@ public final class WorldGuard {
         cacheDir.mkdirs();
 
         try {
-            profileCache = new SQLiteCache(new File(cacheDir, "profiles.sqlite"));
+            profileCache = new CloseableSQLiteCache(new File(cacheDir, "profiles.sqlite"));
         } catch (IOException | UnsatisfiedLinkError ignored) {
             logger.log(Level.WARNING, "Failed to initialize SQLite profile cache. Cache is memory-only.");
             profileCache = new HashMapCache();
@@ -198,12 +198,31 @@ public final class WorldGuard {
             }
 
             //Futures.successfulAsList(tasks).get();
-            executorService.awaitTermination(5, TimeUnit.SECONDS);
+            if (!platform.isHotUnloadPrepared()) {
+                executorService.awaitTermination(5, TimeUnit.SECONDS);
+            }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
 
         platform.unload();
+        if (profileCache instanceof CloseableSQLiteCache sqliteCache) {
+            try {
+                sqliteCache.close();
+            } catch (java.sql.SQLException e) {
+                logger.log(Level.WARNING, "Failed to close the profile cache", e);
+            }
+        }
+    }
+
+    private static final class CloseableSQLiteCache extends SQLiteCache {
+        private CloseableSQLiteCache(File file) throws IOException {
+            super(file);
+        }
+
+        private synchronized void close() throws java.sql.SQLException {
+            getConnection().close();
+        }
     }
 
     /**

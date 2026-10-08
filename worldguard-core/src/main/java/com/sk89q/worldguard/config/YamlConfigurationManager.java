@@ -31,6 +31,7 @@ import com.sk89q.worldguard.util.sql.DataSourceConfig;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -40,6 +41,10 @@ public abstract class YamlConfigurationManager extends ConfigurationManager {
 
     public abstract void copyDefaults();
 
+    protected boolean isStrictLoading() {
+        return false;
+    }
+
     @Override
     public void load() {
         copyDefaults();
@@ -48,6 +53,9 @@ public abstract class YamlConfigurationManager extends ConfigurationManager {
         try {
             config.load();
         } catch (IOException e) {
+            if (isStrictLoading()) {
+                throw new UncheckedIOException("Unable to read WorldGuard configuration", e);
+            }
             log.severe("Error reading configuration for global config: ");
             e.printStackTrace();
         }

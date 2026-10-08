@@ -65,7 +65,9 @@ import javax.annotation.Nullable;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
@@ -73,7 +75,8 @@ import java.util.stream.Collectors;
 public class BukkitWorldGuardPlatform implements WorldGuardPlatform {
 
     private BukkitSessionManager sessionManager;
-    private BukkitConfigurationManager configuration;
+    private volatile BukkitConfigurationManager configuration;
+    private final AtomicBoolean reloadingConfiguration = new AtomicBoolean();
     private BukkitRegionContainer regionContainer;
     private BukkitDebugHandler debugHandler;
     private StringMatcher stringMatcher;
@@ -155,6 +158,77 @@ public class BukkitWorldGuardPlatform implements WorldGuardPlatform {
     @Override
     public BukkitConfigurationManager getGlobalStateManager() {
         return configuration;
+    }
+
+    public boolean isReloadingConfiguration() {
+        return reloadingConfiguration.get();
+    }
+
+    @Override
+    public boolean isHotUnloadPrepared() {
+        return WorldGuardPlugin.inst().isHotUnloadPrepared();
+    }
+
+    @Override
+    public boolean reloadConfiguration(Actor sender) {
+        WorldGuardPlugin plugin = WorldGuardPlugin.inst();
+        if (!reloadingConfiguration.compareAndSet(false, true)) {
+            reply(plugin, sender, "A WorldGuard configuration reload is already in progress.");
+            return true;
+        }
+        Bukkit.getGlobalRegionScheduler().run(plugin, ignored -> {
+            if (plugin.isHotUnloadPending()) {
+                reloadingConfiguration.set(false);
+                reply(plugin, sender, "WorldGuard is preparing to unload; retry after loading completes.");
+                return;
+            }
+            List<String> worldNames = Bukkit.getWorlds().stream().map(org.bukkit.World::getName).toList();
+            BukkitConfigurationManager previous = configuration;
+            Bukkit.getAsyncScheduler().runNow(plugin, task -> {
+                try {
+                    BukkitConfigurationManager next = new BukkitConfigurationManager(plugin, worldNames);
+                    next.load();
+                    if (!Objects.equals(previous.getConfig().getProperty("regions.sql"),
+                            next.getConfig().getProperty("regions.sql"))) {
+                        throw new IllegalArgumentException("Changing region storage requires a server restart.");
+                    }
+                    regionContainer.prepareConfiguration(next, worldNames);
+                    if (!plugin.isEnabled()) {
+                        reloadingConfiguration.set(false);
+                        return;
+                    }
+                    Bukkit.getGlobalRegionScheduler().run(plugin, publish -> {
+                        try {
+                            if (configuration != previous) {
+                                throw new IllegalStateException("Configuration changed while preparing reload");
+                            }
+                            next.activityHaltToggle = previous.activityHaltToggle;
+                            next.updateCommandBookGodMode();
+                            configuration = next;
+                            regionContainer.invalidateQueries();
+                            reply(plugin, sender, "WorldGuard configuration reloaded.");
+                        } finally {
+                            reloadingConfiguration.set(false);
+                        }
+                    });
+                } catch (Exception e) {
+                    reloadingConfiguration.set(false);
+                    plugin.getLogger().log(Level.WARNING, "Configuration reload rejected; previous protection remains active", e);
+                    if (plugin.isEnabled()) {
+                        reply(plugin, sender, "Error while reloading; previous configuration remains active: " + e.getMessage());
+                    }
+                }
+            });
+        });
+        return true;
+    }
+
+    private static void reply(WorldGuardPlugin plugin, Actor sender, String message) {
+        if (sender instanceof BukkitPlayer player) {
+            player.getPlayer().getScheduler().run(plugin, task -> sender.print(message), null);
+        } else {
+            Bukkit.getGlobalRegionScheduler().run(plugin, task -> sender.print(message));
+        }
     }
 
     @Override

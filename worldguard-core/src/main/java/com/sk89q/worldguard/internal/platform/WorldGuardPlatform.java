@@ -41,6 +41,15 @@ import java.nio.file.Path;
  */
 public interface WorldGuardPlatform {
 
+    /** Start a platform-owned configuration reload without dismantling active protection. */
+    default boolean reloadConfiguration(Actor sender) {
+        return false;
+    }
+
+    default boolean isHotUnloadPrepared() {
+        return false;
+    }
+
     /** Start platform-owned halt cleanup, returning false to use the legacy implementation. */
     default boolean removeIntensiveEntities(Actor sender) {
         return false;

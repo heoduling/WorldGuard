@@ -59,6 +59,7 @@ import java.util.logging.Level;
  * @author Michael
  */
 public class BukkitWorldConfiguration extends YamlWorldConfiguration {
+    private final boolean strictLoading;
 
     private static final TargetMatcherParser matcherParser = new TargetMatcherParser();
 
@@ -81,6 +82,11 @@ public class BukkitWorldConfiguration extends YamlWorldConfiguration {
      * @param parentConfig The parent configuration to read defaults from
      */
     public BukkitWorldConfiguration(WorldGuardPlugin plugin, String worldName, YAMLProcessor parentConfig) {
+        this(plugin, worldName, parentConfig, false);
+    }
+
+    public BukkitWorldConfiguration(WorldGuardPlugin plugin, String worldName, YAMLProcessor parentConfig, boolean strictLoading) {
+        this.strictLoading = strictLoading;
         File baseFolder = new File(plugin.getDataFolder(), "worlds/" + worldName);
         File configFile = new File(baseFolder, "config.yml");
         blacklistFile = new File(baseFolder, "blacklist.txt");
@@ -134,6 +140,9 @@ public class BukkitWorldConfiguration extends YamlWorldConfiguration {
         try {
             config.load();
         } catch (IOException e) {
+            if (strictLoading) {
+                throw new java.io.UncheckedIOException("Unable to read configuration for " + worldName, e);
+            }
             log.log(Level.SEVERE, "Error reading configuration for world " + worldName + ": ", e);
         } catch (YAMLException e) {
             log.severe("Error parsing configuration for world " + worldName + ". ");

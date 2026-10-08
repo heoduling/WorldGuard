@@ -112,6 +112,23 @@ public class BukkitRegionContainer extends RegionContainer {
         container.shutdown();
     }
 
+    /** Prepare newly enabled world stores without removing any live manager. IO-thread only. */
+    public void prepareConfiguration(BukkitConfigurationManager next, List<String> worldNames) {
+        for (String name : worldNames) {
+            if (next.get(name).useRegions && container.load(name) == null) {
+                throw new IllegalStateException("Cannot load region data for " + name);
+            }
+        }
+    }
+
+    public void invalidateQueries() {
+        cache.invalidateAll();
+    }
+
+    public void flushForHotUnload() throws com.sk89q.worldguard.protection.managers.storage.StorageException {
+        container.flush();
+    }
+
     @Override
     @Nullable
     protected RegionManager load(World world) {

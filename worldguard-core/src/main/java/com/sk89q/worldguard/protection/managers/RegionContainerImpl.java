@@ -199,6 +199,16 @@ public class RegionContainerImpl {
         unloadAll();
     }
 
+    /** Flush before a supported hot unload; propagate failure instead of discarding dirty data. */
+    public void flush() throws StorageException {
+        synchronized (lock) {
+            for (RegionManager manager : mapping.values()) {
+                manager.saveChanges();
+                failingSaves.remove(manager);
+            }
+        }
+    }
+
     /**
      * Get the region manager for the given world name.
      *

@@ -113,6 +113,20 @@ public class WorldGuardPlugin extends JavaPlugin {
     private static BukkitWorldGuardPlatform platform;
     private final CommandsManager<Actor> commands;
     private PlayerMoveListener playerMoveListener;
+    private Metrics metrics;
+    private WorldGuardHotload hotload;
+
+    public boolean isHotUnloadPending() {
+        return hotload != null && hotload.isPending();
+    }
+
+    public boolean isHotUnloadDraining() {
+        return hotload != null && hotload.isDraining();
+    }
+
+    public boolean isHotUnloadPrepared() {
+        return hotload != null && hotload.isPrepared();
+    }
 
     private static final int BSTATS_PLUGIN_ID = 3283;
 
@@ -248,9 +262,15 @@ public class WorldGuardPlugin extends JavaPlugin {
         ((SimpleFlagRegistry) WorldGuard.getInstance().getFlagRegistry()).setInitialized(true);
 
         // Enable metrics
-        final Metrics metrics = new Metrics(this, BSTATS_PLUGIN_ID); // bStats plugin id
+        metrics = new Metrics(this, BSTATS_PLUGIN_ID); // bStats plugin id
         if (platform.getGlobalStateManager().extraStats) {
             setupCustomCharts(metrics);
+        }
+        hotload = new WorldGuardHotload(this);
+        try {
+            WorldGuardHelpTopics.update(this, false);
+        } catch (ReflectiveOperationException e) {
+            getLogger().log(Level.WARNING, "Cannot restore WorldGuard help references", e);
         }
     }
 
@@ -297,6 +317,18 @@ public class WorldGuardPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        if (hotload != null) {
+            hotload.close();
+        }
+        try {
+            WorldGuardHelpTopics.update(this, true);
+        } catch (ReflectiveOperationException e) {
+            getLogger().log(Level.WARNING, "Cannot detach WorldGuard help references", e);
+        }
+        if (metrics != null) {
+            metrics.shutdown();
+            metrics = null;
+        }
         WorldGuard.getInstance().disable();
         if (this.isFolia()) {
             this.getServer().getGlobalRegionScheduler().cancelTasks(this);
@@ -308,6 +340,10 @@ public class WorldGuardPlugin extends JavaPlugin {
 
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
+        if (isHotUnloadPending()) {
+            sender.sendMessage("WorldGuard is finishing a hot unload; wait for it to complete.");
+            return true;
+        }
         try {
             Actor actor = wrapCommandSender(sender);
             try {

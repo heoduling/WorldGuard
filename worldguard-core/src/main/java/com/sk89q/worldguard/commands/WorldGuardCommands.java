@@ -89,6 +89,9 @@ public class WorldGuardCommands {
     @Command(aliases = {"reload"}, desc = "Reload WorldGuard configuration", max = 0)
     @CommandPermissions({"worldguard.reload"})
     public void reload(CommandContext args, Actor sender) throws CommandException {
+        if (WorldGuard.getInstance().getPlatform().reloadConfiguration(sender)) {
+            return;
+        }
         // TODO: This is subject to a race condition, but at least other commands are not being processed concurrently
         List<Task<?>> tasks = WorldGuard.getInstance().getSupervisor().getTasks();
         if (!tasks.isEmpty()) {

@@ -27,6 +27,7 @@ import com.sk89q.worldedit.util.report.Unreported;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -37,6 +38,7 @@ public class BukkitConfigurationManager extends YamlConfigurationManager {
 
     private boolean hasCommandBookGodMode;
     boolean extraStats;
+    private final List<String> initialWorlds;
 
     /**
      * Construct the object.
@@ -44,12 +46,22 @@ public class BukkitConfigurationManager extends YamlConfigurationManager {
      * @param plugin The plugin instance
      */
     public BukkitConfigurationManager(WorldGuardPlugin plugin) {
+        this(plugin, null);
+    }
+
+    public BukkitConfigurationManager(WorldGuardPlugin plugin, List<String> initialWorlds) {
         super();
         this.plugin = plugin;
+        this.initialWorlds = initialWorlds == null ? null : List.copyOf(initialWorlds);
     }
 
     public Collection<BukkitWorldConfiguration> getWorldConfigs() {
         return worlds.values();
+    }
+
+    @Override
+    protected boolean isStrictLoading() {
+        return initialWorlds != null;
     }
 
     @Override
@@ -77,8 +89,12 @@ public class BukkitConfigurationManager extends YamlConfigurationManager {
     @Override
     public void postLoad() {
         // Load configurations for each world
-        for (World world : WorldEdit.getInstance().getPlatformManager().queryCapability(Capability.GAME_HOOKS).getWorlds()) {
-            get(world);
+        if (initialWorlds != null) {
+            initialWorlds.forEach(this::get);
+        } else {
+            for (World world : WorldEdit.getInstance().getPlatformManager().queryCapability(Capability.GAME_HOOKS).getWorlds()) {
+                get(world);
+            }
         }
         getConfig().save();
     }
@@ -97,17 +113,19 @@ public class BukkitConfigurationManager extends YamlConfigurationManager {
 
     public BukkitWorldConfiguration get(String worldName) {
         BukkitWorldConfiguration config = worlds.get(worldName);
-        BukkitWorldConfiguration newConfig = null;
-
-        while (config == null) {
-            if (newConfig == null) {
-                newConfig = new BukkitWorldConfiguration(plugin, worldName, this.getConfig());
-            }
-            worlds.putIfAbsent(worldName, newConfig);
-            config = worlds.get(worldName);
+        if (config != null) {
+            return config;
         }
-
-        return config;
+        // Constructors also read/migrate/save the shared parent YAML processor.
+        // putIfAbsent alone would execute those side effects concurrently.
+        synchronized (this) {
+            config = worlds.get(worldName);
+            if (config == null) {
+                config = new BukkitWorldConfiguration(plugin, worldName, this.getConfig(), isStrictLoading());
+                worlds.put(worldName, config);
+            }
+            return config;
+        }
     }
 
     public void updateCommandBookGodMode() {

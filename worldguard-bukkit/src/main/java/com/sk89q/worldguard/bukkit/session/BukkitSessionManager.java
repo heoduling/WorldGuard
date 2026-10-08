@@ -85,8 +85,14 @@ public class BukkitSessionManager extends AbstractSessionManager implements Runn
     @Override
     @SuppressWarnings({"rawtypes", "unchecked"})
     public void run() {
+        if (WorldGuardPlugin.inst().isHotUnloadDraining()) {
+            return;
+        }
         for (Player player : Bukkit.getServer().getOnlinePlayers()) {
             Runnable task = () -> {
+                if (WorldGuardPlugin.inst().isHotUnloadDraining()) {
+                    return;
+                }
                 LocalPlayer localPlayer = WorldGuardPlugin.inst().wrapPlayer(player);
                 get(localPlayer).tick(localPlayer);
             };
@@ -118,6 +124,9 @@ public class BukkitSessionManager extends AbstractSessionManager implements Runn
     }
 
     public void shutdown() {
+        if (WorldGuardPlugin.inst().isHotUnloadPrepared()) {
+            return; // Every live session was already restored on its entity owner.
+        }
         for (Player player : Bukkit.getServer().getOnlinePlayers()) {
             LocalPlayer localPlayer = WorldGuardPlugin.inst().wrapPlayer(player);
             get(localPlayer).uninitialize(localPlayer);
