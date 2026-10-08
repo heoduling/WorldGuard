@@ -1,0 +1,9 @@
+name: WorldGuardHolderProbe
+version: '1'
+main: audit.wg.WorldGuardProbe
+api-version: '26.2'
+folia-supported: true
+depend: [WorldGuard, WorldEdit]
+commands:
+  wgprobe:
+    description: Isolated runtime regression only

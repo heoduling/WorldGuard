@@ -1,0 +1,5 @@
+[diamond]
+on-acquire=deny
+
+[diamond_helmet]
+on-equip=deny

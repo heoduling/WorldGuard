@@ -40,6 +40,7 @@ import com.sk89q.worldguard.bukkit.event.entity.DestroyEntityEvent;
 import com.sk89q.worldguard.bukkit.event.entity.SpawnEntityEvent;
 import com.sk89q.worldguard.bukkit.event.inventory.UseItemEvent;
 import com.sk89q.worldguard.bukkit.util.Materials;
+import com.sk89q.worldguard.bukkit.util.PaperInterop;
 import com.sk89q.worldguard.config.ConfigurationManager;
 import com.sk89q.worldguard.config.WorldConfiguration;
 import org.bukkit.Material;
@@ -59,6 +60,7 @@ import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerItemHeldEvent;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 
@@ -268,16 +270,23 @@ public class BlacklistListener extends AbstractListener {
         Inventory inventory = event.getInventory();
         ItemStack item = event.getCurrentItem();
 
-        if (item != null && inventory.getHolder() != null) {
+        if (item != null) {
             Player player = (Player) entity;
             WorldConfiguration wcfg = getWorldConfig(player.getWorld());
+            if (wcfg.getBlacklist() == null) {
+                return;
+            }
+            InventoryHolder holder = PaperInterop.getHolder(inventory, false);
+            if (holder == null) {
+                return;
+            }
             LocalPlayer localPlayer = getPlugin().wrapPlayer(player);
 
             if (wcfg.getBlacklist() != null && !wcfg.getBlacklist().check(
                     new ItemAcquireBlacklistEvent(localPlayer, BukkitAdapter.asBlockVector(entity.getLocation()), createTarget(item)), false, false)) {
                 event.setCancelled(true);
 
-                if (inventory.getHolder().equals(player)) {
+                if (holder.equals(player)) {
                     event.setCurrentItem(null);
                 }
             }

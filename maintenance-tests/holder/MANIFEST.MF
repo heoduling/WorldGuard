@@ -1,0 +1,4 @@
+Manifest-Version: 1.0
+Premain-Class: audit.holder.SnapshotAgent
+Class-Path: lib/asm-9.10.1.jar
+
