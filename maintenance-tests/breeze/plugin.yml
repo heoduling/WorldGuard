@@ -1,0 +1,12 @@
+name: WorldGuardBreezeProbe
+version: 1
+main: audit.wg.BreezeProbe
+api-version: '26.2'
+folia-supported: true
+depend: [WorldGuard, WorldEdit]
+commands:
+  breezeprobe:
+    permission: breezeprobe.admin
+permissions:
+  breezeprobe.admin:
+    default: op

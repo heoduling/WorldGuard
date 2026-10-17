@@ -304,6 +304,13 @@ public final class Cause {
 
                 seen.add(o);
 
+                if (isForeignEntity(o)) {
+                    // Projectiles can retain a shooter in another region. Keep the local
+                    // projectile as the cause, without reading the remote entity's state.
+                    indirect = true;
+                    continue;
+                }
+
                 if (o instanceof TNTPrimed) {
                     addAll(((TNTPrimed) o).getSource());
                 } else if (o instanceof Projectile) {
@@ -373,6 +380,10 @@ public final class Cause {
                 int index = causes.size();
                 while (source instanceof Metadatable && !(source instanceof Block)) {
                     source = WGMetadata.getIfPresent((Metadatable) source, CAUSE_KEY, Object.class);
+                    if (isForeignEntity(source)) {
+                        indirect = true;
+                        break;
+                    }
                     if (source != null) {
                         causes.add(index, source);
                         seen.add(source);
@@ -381,6 +392,12 @@ public final class Cause {
 
                 causes.add(o);
             }
+        }
+
+        private static boolean isForeignEntity(@Nullable Object source) {
+            // Player identity is still needed for membership and permission checks.
+            return source instanceof Entity entity && !(entity instanceof Player)
+                    && WorldGuardPlugin.inst().isFolia() && !Bukkit.isOwnedByCurrentRegion(entity);
         }
 
         public Cause build() {

@@ -1380,6 +1380,17 @@ public class EventAbstractionListener extends AbstractListener {
         public void onEntityKnockbackByEntity(EntityPushedByEntityAttackEvent event) {
             handleKnockback(event, event.getPushedBy());
         }
+
+        @SuppressWarnings("removal")
+        @EventHandler(ignoreCancelled = true)
+        public void onWindChargeKnockback(EntityKnockbackByEntityEvent event) {
+            // Paper's pushedBy can be the shooter. The Bukkit event retains the
+            // projectile, so wind-charge flags must be checked here as well.
+            Entity source = event.getSourceEntity();
+            if (source instanceof BreezeWindCharge || source instanceof WindCharge) {
+                handleKnockback(event, source);
+            }
+        }
     }
 
     @SuppressWarnings("removal")
