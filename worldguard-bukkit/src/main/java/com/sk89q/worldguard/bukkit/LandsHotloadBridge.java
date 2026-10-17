@@ -52,38 +52,35 @@ final class LandsHotloadBridge {
     private volatile boolean accepting;
     private volatile CompletableFuture<Void> drained = CompletableFuture.completedFuture(null);
     private StateFlag claim;
+    private boolean originalLands;
 
     LandsHotloadBridge(WorldGuardPlugin plugin) {
         this.plugin = plugin;
     }
 
     static boolean supported(Plugin other) {
-        if (!other.getName().equals("Lands") || !other.getDescription().getVersion().equals("7.28.0-foliafix-1")) {
-            return false;
-        }
-        try {
-            return Integer.valueOf(1).equals(other.getClass().getMethod("worldGuardHotloadProtocol").invoke(other));
-        } catch (ReflectiveOperationException e) {
-            return false;
-        }
+        return LandsProviderAdapter.installed(other);
     }
 
     void initializeFlag() {
         Plugin lands = Bukkit.getPluginManager().getPlugin("Lands");
-        if (lands != null && supported(lands)) {
+        if (lands != null && LandsProviderAdapter.original(lands)) {
             try {
-                register((boolean) lands.getClass().getMethod("worldGuardClaimDefault").invoke(lands));
+                String name = LandsProviderAdapter.flagName(lands);
+                if (name != null) register(name, LandsProviderAdapter.flagDefault(lands));
+                originalLands = true;
+                LandsLegacyRegions.warmup();
             } catch (ReflectiveOperationException e) {
-                throw new IllegalStateException("Cannot restore the Lands claim flag", e);
+                throw new IllegalStateException("Cannot initialize original Lands claim flag", e);
             }
         }
     }
 
-    private boolean register(boolean defaultState) {
+    private boolean register(String name, boolean defaultState) {
         var registry = WorldGuard.getInstance().getFlagRegistry();
-        var existing = registry.get("lands-claim");
+        var existing = registry.get(name);
         if (existing == null) {
-            claim = new StateFlag("lands-claim", defaultState);
+            claim = new StateFlag(name, defaultState);
             registry.register(claim);
         } else if (existing instanceof StateFlag state && (state.getDefault() == StateFlag.State.ALLOW) == defaultState) {
             claim = state;
@@ -91,6 +88,21 @@ final class LandsHotloadBridge {
             throw new IllegalStateException("Incompatible lands-claim flag");
         }
         return true;
+    }
+
+    boolean originalLands() {
+        return originalLands;
+    }
+
+    void installOriginalAdapter() {
+        Plugin lands = Bukkit.getPluginManager().getPlugin("Lands");
+        if (lands != null && LandsProviderAdapter.original(lands)) {
+            try {
+                LandsProviderAdapter.install(plugin, lands);
+            } catch (ReflectiveOperationException | java.io.IOException e) {
+                throw new IllegalStateException("Cannot install original Lands adapter", e);
+            }
+        }
     }
 
     boolean onlySupportedFlags() {
@@ -113,9 +125,6 @@ final class LandsHotloadBridge {
     }
 
     Object query(String operation, Object[] args) {
-        if (operation.equals("register")) {
-            return register((boolean) args[0]);
-        }
         readers.incrementAndGet();
         try {
             if (!accepting || !plugin.isEnabled()) {
@@ -196,6 +205,10 @@ final class LandsHotloadBridge {
                 return player != null && regions != null && regions.isOwnerOfAll(plugin.wrapPlayer(player));
             }
             case "claimPoint": {
+                if (claim == null) {
+                    ProtectedRegion region = first((Location) args[1]);
+                    return region == null ? args[2] : member(region, player(args[0]));
+                }
                 ApplicableRegionSet regions = regions((Location) args[1]);
                 return regions == null || (regions.size() == 0 && !(boolean) args[3])
                         ? args[2] : regions.testState(plugin.wrapPlayer((Player) args[0]), claim);
@@ -219,7 +232,7 @@ final class LandsHotloadBridge {
                 }
                 RegionAssociable associable = args[0] == null
                         ? new RegionOverlapAssociation(Set.of()) : plugin.wrapPlayer((Player) args[0]);
-                return regions.testState(associable, claim);
+                return claim != null && regions.testState(associable, claim);
             }
             case "import": {
                 List<Map<String, Object>> snapshot = new ArrayList<>();

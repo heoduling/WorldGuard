@@ -277,6 +277,7 @@ public class WorldGuardPlugin extends JavaPlugin {
             setupCustomCharts(metrics);
         }
         hotload = new WorldGuardHotload(this);
+        landsBridge.installOriginalAdapter();
         landsBridge.resume();
         try {
             WorldGuardHelpTopics.update(this, false);

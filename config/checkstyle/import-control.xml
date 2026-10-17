@@ -31,6 +31,9 @@
       <allow pkg="com.destroystokyo.paper"/>
       <allow pkg="io.papermc.paper"/>
       <allow pkg="org.spigotmc" />
+      <subpackage name="compat.lands728">
+        <allow pkg="me.angeschossen.lands"/>
+      </subpackage>
     </subpackage>
 
   </subpackage>

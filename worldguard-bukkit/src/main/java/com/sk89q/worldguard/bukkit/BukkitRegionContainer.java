@@ -112,6 +112,14 @@ public class BukkitRegionContainer extends RegionContainer {
         container.shutdown();
     }
 
+    @Override
+    public List<RegionManager> getLoaded() {
+        if (!plugin.isEnabled() && plugin.landsBridge().originalLands()) {
+            return LandsLegacyRegions.current();
+        }
+        return super.getLoaded();
+    }
+
     /** Prepare newly enabled world stores without removing any live manager. IO-thread only. */
     public void prepareConfiguration(BukkitConfigurationManager next, List<String> worldNames) {
         for (String name : worldNames) {
