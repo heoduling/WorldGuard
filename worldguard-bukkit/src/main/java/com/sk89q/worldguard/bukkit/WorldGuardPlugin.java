@@ -115,6 +115,15 @@ public class WorldGuardPlugin extends JavaPlugin {
     private PlayerMoveListener playerMoveListener;
     private Metrics metrics;
     private WorldGuardHotload hotload;
+    private final LandsHotloadBridge landsBridge = new LandsHotloadBridge(this);
+
+    public Object landsHotloadQuery(String operation, Object[] arguments) {
+        return landsBridge.query(operation, arguments);
+    }
+
+    LandsHotloadBridge landsBridge() {
+        return landsBridge;
+    }
 
     public boolean isHotUnloadPending() {
         return hotload != null && hotload.isPending();
@@ -163,6 +172,7 @@ public class WorldGuardPlugin extends JavaPlugin {
         verifier.reportMismatches(ImmutableList.of(WorldGuard.class, ProtectedRegion.class, Flag.class));
 
         configureLogger();
+        landsBridge.initializeFlag();
 
         getDataFolder().mkdirs(); // Need to create the plugins/WorldGuard folder
 
@@ -267,6 +277,7 @@ public class WorldGuardPlugin extends JavaPlugin {
             setupCustomCharts(metrics);
         }
         hotload = new WorldGuardHotload(this);
+        landsBridge.resume();
         try {
             WorldGuardHelpTopics.update(this, false);
         } catch (ReflectiveOperationException e) {
@@ -317,6 +328,7 @@ public class WorldGuardPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        landsBridge.drain();
         if (hotload != null) {
             hotload.close();
         }

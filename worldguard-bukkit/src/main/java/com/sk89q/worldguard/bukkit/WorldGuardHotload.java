@@ -21,7 +21,6 @@ package com.sk89q.worldguard.bukkit;
 
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.bukkit.session.BukkitSessionManager;
-import com.sk89q.worldguard.protection.flags.Flags;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -202,12 +201,13 @@ final class WorldGuardHotload implements Listener {
             }
             for (Plugin other : Bukkit.getPluginManager().getPlugins()) {
                 if (other != plugin && other.isEnabled()
+                        && !LandsHotloadBridge.supported(other)
                         && (other.getDescription().getDepend().contains("WorldGuard")
                         || other.getDescription().getSoftDepend().contains("WorldGuard"))) {
                     throw new IllegalStateException("Unload the WorldGuard integration first: " + other.getName());
                 }
             }
-            if (WorldGuard.getInstance().getFlagRegistry().size() > Flags.INBUILT_FLAGS.size()
+            if (!plugin.landsBridge().onlySupportedFlags()
                     || platform.getSessionManager().customHandlersRegistered()) {
                 throw new IllegalStateException("Custom WorldGuard flags/session handlers require a full restart.");
             }
@@ -222,6 +222,7 @@ final class WorldGuardHotload implements Listener {
                 }
             }
             var completions = new ArrayList<CompletableFuture<Void>>();
+            completions.add(plugin.landsBridge().drain());
             for (Player player : Bukkit.getOnlinePlayers()) {
                 CompletableFuture<Void> completion = new CompletableFuture<>();
                 completions.add(completion);
@@ -350,6 +351,7 @@ final class WorldGuardHotload implements Listener {
         boolean wasDraining = draining;
         draining = false;
         prepared = false;
+        plugin.landsBridge().resume();
         for (Registration registration : suspended) {
             registration.list().register(registration.listener());
         }
