@@ -179,10 +179,15 @@ public final class Cause {
         return null;
     }
 
+    /**
+     * Return the first block that can be read in the current region.
+     * Historical locations remain in the cause chain for region associations.
+     */
     @Nullable
     public Block getFirstBlock() {
         for (Object object : causes) {
-            if (object instanceof Block b) {
+            if (object instanceof Block b
+                    && (!WorldGuardPlugin.inst().isFolia() || Bukkit.isOwnedByCurrentRegion(b))) {
                 return b;
             }
         }

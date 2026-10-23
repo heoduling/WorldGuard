@@ -1,0 +1,9 @@
+name: OriginProbe
+version: '1'
+main: audit.origin.OriginProbe
+api-version: '26.2'
+folia-supported: true
+softdepend: [Lands]
+commands:
+  originprobe:
+    description: Isolated falling-origin regression fixture
