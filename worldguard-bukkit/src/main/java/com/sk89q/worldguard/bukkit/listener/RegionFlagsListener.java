@@ -44,6 +44,7 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 
 import java.util.function.Predicate;
+import java.util.function.Function;
 
 public class RegionFlagsListener extends AbstractListener {
 
@@ -65,16 +66,16 @@ public class RegionFlagsListener extends AbstractListener {
         Block block;
         if ((block = event.getCause().getFirstBlock()) != null) {
             if (Materials.isPistonBlock(block.getType())) {
-                event.filter(testState(query, Flags.PISTONS), false);
+                event.filter(testState(query, Flags.PISTONS, event::toWorldEditLocation), false);
             }
         }
 
         if (event.getCause().find(EntityType.SNOW_GOLEM) != null) {
-            event.filter(testState(query, Flags.SNOWMAN_TRAILS), false);
+            event.filter(testState(query, Flags.SNOWMAN_TRAILS, event::toWorldEditLocation), false);
         }
 
         if (event.getCause().find(EntityType.ENDERMAN) != null) {
-            event.filter(testState(query, Flags.ENDER_BUILD), false);
+            event.filter(testState(query, Flags.ENDER_BUILD, event::toWorldEditLocation), false);
         }
     }
 
@@ -88,28 +89,28 @@ public class RegionFlagsListener extends AbstractListener {
         Block block;
         if ((block = event.getCause().getFirstBlock()) != null) {
             if (Materials.isPistonBlock(block.getType())) {
-                event.filter(testState(query, Flags.PISTONS), false);
+                event.filter(testState(query, Flags.PISTONS, event::toWorldEditLocation), false);
             }
         }
 
         if (event.getCause().find(EntityType.CREEPER) != null) { // Creeper
-            event.filter(testState(query, Flags.CREEPER_EXPLOSION), config.explosionFlagCancellation);
+            event.filter(testState(query, Flags.CREEPER_EXPLOSION, event::toWorldEditLocation), config.explosionFlagCancellation);
         }
 
         if (event.getCause().find(EntityType.ENDER_DRAGON) != null) { // Enderdragon
-            event.filter(testState(query, Flags.ENDERDRAGON_BLOCK_DAMAGE), config.explosionFlagCancellation);
+            event.filter(testState(query, Flags.ENDERDRAGON_BLOCK_DAMAGE, event::toWorldEditLocation), config.explosionFlagCancellation);
         }
 
         if (event.getCause().find(EntityType.END_CRYSTAL) != null) { // EnderCrystal
-            event.filter(testState(query, Flags.OTHER_EXPLOSION), config.explosionFlagCancellation);
+            event.filter(testState(query, Flags.OTHER_EXPLOSION, event::toWorldEditLocation), config.explosionFlagCancellation);
         }
 
         if (event.getCause().find(EntityType.ENDERMAN) != null) {
-            event.filter(testState(query, Flags.ENDER_BUILD), false);
+            event.filter(testState(query, Flags.ENDER_BUILD, event::toWorldEditLocation), false);
         }
 
         if (event.getCause().find(EntityType.RAVAGER) != null) {
-            event.filter(testState(query, Flags.RAVAGER_RAVAGE), false);
+            event.filter(testState(query, Flags.RAVAGER_RAVAGE, event::toWorldEditLocation), false);
         }
     }
 
@@ -146,8 +147,9 @@ public class RegionFlagsListener extends AbstractListener {
      * @param flag the flag
      * @return a predicate
      */
-    private Predicate<Location> testState(final RegionQuery query, final StateFlag flag) {
-        return location -> query.testState(BukkitAdapter.adapt(location), (RegionAssociable) null, flag);
+    private Predicate<Location> testState(final RegionQuery query, final StateFlag flag,
+                                          Function<Location, com.sk89q.worldedit.util.Location> adaptLocation) {
+        return location -> query.testState(adaptLocation.apply(location), (RegionAssociable) null, flag);
     }
 
 

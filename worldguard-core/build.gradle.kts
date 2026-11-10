@@ -34,6 +34,12 @@ tasks.compileJava {
     options.compilerArgs.add("-Aarg.name.key.prefix=")
 }
 
+tasks.withType<Test>().configureEach {
+    providers.gradleProperty("baselineJar").orNull?.let {
+        systemProperty("worldguard.baselineJar", file(it).absolutePath)
+    }
+}
+
 configure<PublishingExtension> {
     publications.named<MavenPublication>("maven") {
         artifactId = the<BasePluginExtension>().archivesName.get()

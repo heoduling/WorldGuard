@@ -185,16 +185,16 @@ public class RegionProtectionListener extends AbstractListener {
                 flags.add(Flags.LIGHTER);
                 if (fire) flags.add(Flags.FIRE_SPREAD);
                 if (lava) flags.add(Flags.LAVA_FIRE);
-                canPlace = query.testBuild(BukkitAdapter.adapt(target), associable, combine(event, flags.toArray(new StateFlag[flags.size()])));
+                canPlace = query.testBuild(event.toWorldEditLocation(target), associable, combine(event, flags.toArray(new StateFlag[flags.size()])));
                 what = "place fire";
 
             } else if (type == Material.FROSTED_ICE) {
                 event.setSilent(true); // gets spammy
-                canPlace = query.testBuild(BukkitAdapter.adapt(target), associable, combine(event, Flags.BLOCK_PLACE, Flags.FROSTED_ICE_FORM));
+                canPlace = query.testBuild(event.toWorldEditLocation(target), associable, combine(event, Flags.BLOCK_PLACE, Flags.FROSTED_ICE_FORM));
                 what = "use frostwalker"; // hidden anyway
             /* Everything else */
             } else {
-                canPlace = query.testBuild(BukkitAdapter.adapt(target), associable, combine(event, Flags.BLOCK_PLACE));
+                canPlace = query.testBuild(event.toWorldEditLocation(target), associable, combine(event, Flags.BLOCK_PLACE));
                 what = "place that block";
             }
 
@@ -224,12 +224,12 @@ public class RegionProtectionListener extends AbstractListener {
 
                 /* TNT */
                 if (event.getCause().find(EntityType.TNT, EntityType.TNT_MINECART, EntityType.SULFUR_CUBE) != null) {
-                    canBreak = query.testBuild(BukkitAdapter.adapt(target), associable, combine(event, Flags.BLOCK_BREAK, Flags.TNT));
+                    canBreak = query.testBuild(event.toWorldEditLocation(target), associable, combine(event, Flags.BLOCK_BREAK, Flags.TNT));
                     what = "use dynamite";
 
                 /* Everything else */
                 } else {
-                    canBreak = query.testBuild(BukkitAdapter.adapt(target), associable, combine(event, Flags.BLOCK_BREAK));
+                    canBreak = query.testBuild(event.toWorldEditLocation(target), associable, combine(event, Flags.BLOCK_BREAK));
                     what = "break that block";
                 }
 
@@ -259,47 +259,47 @@ public class RegionProtectionListener extends AbstractListener {
 
             /* Saplings, etc. */
             if (Materials.isConsideredBuildingIfUsed(type)) {
-                canUse = query.testBuild(BukkitAdapter.adapt(target), associable, combine(event));
+                canUse = query.testBuild(event.toWorldEditLocation(target), associable, combine(event));
                 what = "use that";
 
             /* Inventory */
             } else if (Materials.isInventoryBlock(type)) {
-                canUse = query.testBuild(BukkitAdapter.adapt(target), associable, combine(event, Flags.CHEST_ACCESS));
+                canUse = query.testBuild(event.toWorldEditLocation(target), associable, combine(event, Flags.CHEST_ACCESS));
                 what = "open that";
 
             /* Inventory for blocks with the possibility to be only use, e.g. lectern */
             } else if (handleAsInventoryUsage(event.getOriginalEvent())) {
-                canUse = query.testBuild(BukkitAdapter.adapt(target), associable, combine(event, Flags.CHEST_ACCESS));
+                canUse = query.testBuild(event.toWorldEditLocation(target), associable, combine(event, Flags.CHEST_ACCESS));
                 what = "take that";
 
             /* Anvils */
             } else if (Materials.isAnvil(type)) {
-                canUse = query.testBuild(BukkitAdapter.adapt(target), associable, combine(event, Flags.USE_ANVIL));
+                canUse = query.testBuild(event.toWorldEditLocation(target), associable, combine(event, Flags.USE_ANVIL));
                 what = "use that";
 
             /* Beds */
             } else if (Materials.isBed(type)) {
-                canUse = query.testBuild(BukkitAdapter.adapt(target), associable, combine(event, Flags.INTERACT, Flags.SLEEP));
+                canUse = query.testBuild(event.toWorldEditLocation(target), associable, combine(event, Flags.INTERACT, Flags.SLEEP));
                 what = "sleep";
 
             /* Respawn Anchors */
             } else if(type == Material.RESPAWN_ANCHOR) {
-                canUse = query.testBuild(BukkitAdapter.adapt(target), associable, combine(event, Flags.INTERACT, Flags.RESPAWN_ANCHORS));
+                canUse = query.testBuild(event.toWorldEditLocation(target), associable, combine(event, Flags.INTERACT, Flags.RESPAWN_ANCHORS));
                 what = "use anchors";
 
             /* TNT */
             } else if (type == Material.TNT) {
-                canUse = query.testBuild(BukkitAdapter.adapt(target), associable, combine(event, Flags.INTERACT, Flags.TNT));
+                canUse = query.testBuild(event.toWorldEditLocation(target), associable, combine(event, Flags.INTERACT, Flags.TNT));
                 what = "use explosives";
 
             /* Legacy USE flag */
             } else if (Materials.isUseFlagApplicable(type)) {
-                canUse = query.testBuild(BukkitAdapter.adapt(target), associable, combine(event, Flags.INTERACT, Flags.USE));
+                canUse = query.testBuild(event.toWorldEditLocation(target), associable, combine(event, Flags.INTERACT, Flags.USE));
                 what = "use that";
 
             /* Everything else */
             } else {
-                canUse = query.testBuild(BukkitAdapter.adapt(target), associable, combine(event, Flags.INTERACT));
+                canUse = query.testBuild(event.toWorldEditLocation(target), associable, combine(event, Flags.INTERACT));
                 what = "use that";
             }
 

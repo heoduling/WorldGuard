@@ -22,6 +22,7 @@ package com.sk89q.worldguard.bukkit.event.block;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldguard.bukkit.cause.Cause;
 import com.sk89q.worldguard.bukkit.event.BulkEvent;
 import com.sk89q.worldguard.bukkit.event.DelegateEvent;
@@ -51,6 +52,7 @@ abstract class AbstractBlockEvent extends DelegateEvent implements BulkEvent {
     private List<Block> blocks;
     private final List<BlockState> blockStates;
     private final Material effectiveMaterial;
+    private com.sk89q.worldedit.world.World adaptedWorld;
 
     protected AbstractBlockEvent(@Nullable Event originalEvent, Cause cause, World world, List<Block> blocks, Material effectiveMaterial) {
         super(originalEvent, cause);
@@ -95,6 +97,20 @@ abstract class AbstractBlockEvent extends DelegateEvent implements BulkEvent {
      */
     public World getWorld() {
         return world;
+    }
+
+    /**
+     * Adapt a position while reusing this event's WorldEdit world wrapper.
+     */
+    public com.sk89q.worldedit.util.Location toWorldEditLocation(Location location) {
+        if (location.getWorld() != world) {
+            return BukkitAdapter.adapt(location);
+        }
+        if (adaptedWorld == null) {
+            adaptedWorld = BukkitAdapter.adapt(world);
+        }
+        return new com.sk89q.worldedit.util.Location(adaptedWorld, BukkitAdapter.asVector(location),
+                location.getYaw(), location.getPitch());
     }
 
     /**

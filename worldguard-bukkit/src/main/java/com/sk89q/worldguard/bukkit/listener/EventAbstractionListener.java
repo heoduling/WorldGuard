@@ -1051,11 +1051,10 @@ public class EventAbstractionListener extends AbstractListener {
         }
 
         Entry entry;
+        InventoryHolder sourceHolder = PaperInterop.getHolder(event.getSource(), false);
+        InventoryHolder targetHolder = PaperInterop.getHolder(event.getDestination(), false);
 
-        if ((entry = moveItemDebounce.tryDebounce(event)) != null) {
-            InventoryHolder sourceHolder = PaperInterop.getHolder(event.getSource(), false);
-            InventoryHolder targetHolder = PaperInterop.getHolder(event.getDestination(), false);
-
+        if ((entry = moveItemDebounce.tryDebounce(event, causeHolder, sourceHolder, targetHolder)) != null) {
             Cause cause;
 
             if (causeHolder instanceof Entity) {

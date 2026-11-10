@@ -1,0 +1,9 @@
+name: PerfProbe
+version: '1'
+main: audit.perf.PerfProbe
+api-version: '26.2'
+folia-supported: true
+softdepend: [Lands]
+commands:
+  perfprobe:
+    description: Isolated allocation and behavior comparison only

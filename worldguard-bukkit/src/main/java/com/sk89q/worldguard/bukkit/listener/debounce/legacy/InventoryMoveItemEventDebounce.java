@@ -40,15 +40,26 @@ public class InventoryMoveItemEventDebounce extends AbstractEventDebounce<Key> {
         return super.getEntry(new Key(event), event);
     }
 
+    public Entry tryDebounce(InventoryMoveItemEvent event, InventoryHolder cause,
+                             InventoryHolder source, InventoryHolder target) {
+        return super.getEntry(new Key(cause, source, target), event);
+    }
+
     protected static class Key {
         private final Object cause;
         private final Object source;
         private final Object target;
 
         public Key(InventoryMoveItemEvent event) {
-            cause = transform(PaperInterop.getHolder(event.getInitiator(), false));
-            source = transform(PaperInterop.getHolder(event.getSource(), false));
-            target = transform(PaperInterop.getHolder(event.getDestination(), false));
+            this(PaperInterop.getHolder(event.getInitiator(), false),
+                    PaperInterop.getHolder(event.getSource(), false),
+                    PaperInterop.getHolder(event.getDestination(), false));
+        }
+
+        private Key(InventoryHolder cause, InventoryHolder source, InventoryHolder target) {
+            this.cause = transform(cause);
+            this.source = transform(source);
+            this.target = transform(target);
         }
 
         private Object transform(InventoryHolder holder) {
