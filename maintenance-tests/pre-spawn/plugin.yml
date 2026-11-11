@@ -1,0 +1,9 @@
+name: SpawnProbe
+version: '1'
+main: audit.spawn.SpawnProbe
+api-version: '26.2'
+folia-supported: true
+softdepend: [Lands, SuperVanish, PhantomControl]
+commands:
+  spawnprobe:
+    description: Isolated spawn registration and native behavior verification

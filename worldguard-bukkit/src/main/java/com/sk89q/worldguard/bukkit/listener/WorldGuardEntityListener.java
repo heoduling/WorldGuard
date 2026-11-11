@@ -122,6 +122,9 @@ public class WorldGuardEntityListener extends AbstractListener {
         PluginManager pm = getPlugin().getServer().getPluginManager();
         if (PaperLib.isPaper()) {
             pm.registerEvents(new PaperListener(), getPlugin());
+            if (!getPlugin().isFolia()) {
+                pm.registerEvents(new PreCreatureSpawnListener(), getPlugin());
+            }
         } else {
             pm.registerEvents(new SpigotListener(), getPlugin());
         }
@@ -909,7 +912,9 @@ public class WorldGuardEntityListener extends AbstractListener {
                 handlePigZap(event.getEntity(), event);
             }
         }
+    }
 
+    private static class PreCreatureSpawnListener implements Listener {
         /**
          * Applies the natural spawn checks from {@link WorldGuardEntityListener#onCreatureSpawn} before the
          * server constructs the entity. The CreatureSpawnEvent checks fire at the very
